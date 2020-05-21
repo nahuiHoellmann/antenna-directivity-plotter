@@ -47,19 +47,20 @@ class MainWindow:
         self.window.show()
 
     def plot(self):
-        r = np.arange(0, 2, 0.01)
+        r = np.arange(0, -2, -0.01)
         theta = 2 * np.pi * r
 
         phi = -2 * np.pi * r
 
         self.ax.clear()
-        self.ax.plot(theta, r)
-        self.ax.plot(phi, r)
-        self.ax.set_rmax(2)
-        self.ax.set_rticks([0.5, 1, 1.5, 2])  # less radial ticks
-        self.ax.set_rlabel_position(-22.5)  # get radial labels away from plotted line
+        self.ax.plot(theta, r, label="Theta")
+        self.ax.plot(phi, r, label="Phi")
+        self.ax.set_rmin(-2)
+        self.ax.set_rticks([-0.5, -1, -1.5, -2])  # less radial ticks
+        self.ax.set_rlabel_position(22.5)  # get radial labels away from plotted line
         self.ax.grid(True)
         self.ax.set_title("A line plot on a polar axis", va='bottom')
+        self.ax.legend(loc='lower left', bbox_to_anchor=(-0.2, -0.15, 1, 1), ncol=2)
 
         self.ax.figure.canvas.draw_idle()
 
