@@ -72,7 +72,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QRadioButton" name="plot_phi_button">
+            <widget class="QRadioButton" name="plot_phi_btn">
              <property name="text">
               <string>Phi</string>
              </property>
@@ -110,14 +110,14 @@
          <item row="3" column="2">
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
-            <widget class="QCheckBox" name="checkBox">
+            <widget class="QCheckBox" name="set_e_theta">
              <property name="text">
               <string>0</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBox_2">
+            <widget class="QCheckBox" name="set_e_phi">
              <property name="text">
               <string>90</string>
              </property>

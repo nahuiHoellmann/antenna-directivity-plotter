@@ -206,6 +206,8 @@ class Plotter:
 
         if not ax:
             ax = ax = plt.subplot(111, projection='polar')
+        else:
+            ax.clear()
 
         for d, l in zip(data, label):
             var, deg = d

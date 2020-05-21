@@ -3,101 +3,171 @@ from PyQt5.QtWidgets import QFileDialog
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-import numpy as np
+from antools import Plotter
+import pandas as pd
+from functools import wraps
+
+
+def updates_setting(f):
+    """
+    Make sure that after the user changes the plot settings the gui is updated accordingly
+    """
+    @wraps(f)
+    def wrapper(self, *args):
+        f(self, *args)
+        self.update_gui()
+    return wrapper
 
 
 class MainWindow:
     def __init__(self):
         window = uic.loadUi("mainwindow.ui")
-        window.setWindowTitle("[ No open file ]")
+        self.window = window
+        self.setup_gui()
 
-        # Add the matplotlib canvas to the window
-        canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        window.horizontalLayout.replaceWidget(window.placeholder, canvas)
+        self.init_settings()
 
-        # The matplotlib Axes to draw to i.e. ax.plot()
-        self.ax = canvas.figure.subplots(subplot_kw=dict(polar=True))
+    def update_gui(self):
+        """
+        Activate and deactivate gui elements depending on wether the current plot setting are valid
+        This function is mainly called by the updates_setting wraper to update the gui each time the user interacts
+        with it
+        if no file is chosen only the open file button is active
+        the plot button is active as long as all plot setting have a valid value
+        """
+        if not self.filename:
+            for widget in self.requires_file:
+                widget.setEnabled(False)
+            return
+        else:
+            for widget in self.requires_file:
+                widget.setEnabled(True)
 
-        self.plot_settings = {}
-        self.data_frames = {}  # Will store the dfs for each frequency
+        plot_prequesites = [self.lock_var, self.lock_deg is not None, self.polarization, self.freq, len(self.polarization) > 0]
+
+        self.window.plot_btn.setEnabled(all(plot_prequesites))
+
+    def init_settings(self):
+        """
+        Set the default settings and update gui accordingly
+        """
+
+        self.lock_var = "Theta"
+        self.lock_deg = None
+        self.polarization = set()
+        self.freq = None
         self.filename = None
 
-        # Register the actions for the gui events
-        window.choose_file_btn.clicked.connect(self.set_file)
-        # window.file_input.returnPressed.connect(partial(self.set_file, line_input=True))
-        window.plot_btn.clicked.connect(self.plot)
-        window.plot_theta_btn.toggled.connect(
-                lambda selected: self.update_plot_settings({"var": "theta" if selected else "phi"})
-            )
-        window.lock_input.returnPressed.connect(
-                lambda: self.update_plot_settings({"locked_degree": window.lock_input.text()})
-            )
-
-        window.freq_selector.addItems([str(x) + " MHz" for x in [100, 1000, 10000]])
-
-        window.freq_selector.currentTextChanged.connect(
-            lambda freq: self.update_plot_settings({"freq": freq})
-        )
-
-        window.lock_input.setText("49")
-        self.plot_settings["locked_degree"] = 49
-        self.window = window
+        self.update_gui()
 
     def show(self):
         self.window.show()
 
+    def setup_gui(self):
+        """
+        Initializes the gui
+        -Add the plotting canvas to the gui
+        -Delegate registering signals
+        """
+        self.window.setWindowTitle("[ No open file ]")
+
+        # Add the matplotlib canvas to the window
+        canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        self.window.horizontalLayout.replaceWidget(self.window.placeholder, canvas)
+
+        # The matplotlib Axes to draw to i.e. ax.plot()
+        self.ax = canvas.figure.subplots(subplot_kw=dict(polar=True))
+
+        # This widgets will be deactivated if no file is specified
+        self.requires_file = [
+            self.window.plot_phi_btn,
+            self.window.plot_theta_btn,
+            self.window.set_e_phi,
+            self.window.set_e_theta,
+            self.window.plot_btn,
+            self.window.lock_input,
+            self.window.freq_selector
+        ]
+
+        self.register_signals()
+
+    def register_signals(self):
+
+        self.window.choose_file_btn.clicked.connect(lambda _: self.set_file())
+        self.window.plot_btn.clicked.connect(self.plot)
+
+        self.window.plot_theta_btn.toggled.connect(
+            lambda selected: self.set_lock_var("Phi" if selected else "Theta")
+        )
+
+        self.window.lock_input.returnPressed.connect(
+            lambda: self.parse_degree_input()
+        )
+
+        self.window.freq_selector.currentTextChanged.connect(
+            lambda freq: self.set_freq(freq)
+        )
+
+        self.window.set_e_phi.stateChanged.connect(
+            lambda state: self.update_polarization('E-Phi', state)
+        )
+
+        self.window.set_e_theta.stateChanged.connect(
+            lambda state: self.update_polarization('E-Theta', state)
+        )
+
     def plot(self):
-        r = np.arange(0, -2, -0.01)
-        theta = 2 * np.pi * r
-
-        phi = -2 * np.pi * r
-
-        self.ax.clear()
-        self.ax.plot(theta, r, label="Theta")
-        self.ax.plot(phi, r, label="Phi")
-        self.ax.set_rmin(-2)
-        self.ax.set_rticks([-0.5, -1, -1.5, -2])  # less radial ticks
-        self.ax.set_rlabel_position(22.5)  # get radial labels away from plotted line
-        self.ax.grid(True)
-        self.ax.set_title("A line plot on a polar axis", va='bottom')
-        self.ax.legend(loc='lower left', bbox_to_anchor=(-0.2, -0.15, 1, 1), ncol=2)
-
+        """
+        Call the antools api to plot the user specified graph into the canvas
+        """
+        df = self.xl.parse(self.freq)
+        print(self.lock_var, self.lock_deg)
+        Plotter.io_plot(df, lock=(self.lock_var, self.lock_deg), polarization=list(self.polarization), freq=self.freq, ax=self.ax)
         self.ax.figure.canvas.draw_idle()
 
+    @updates_setting
+    def parse_degree_input(self):
+        deg = None
+
+        try:
+            deg = int(self.window.lock_input.text())
+        except ValueError:
+            pass
+
+        if deg:
+            self.lock_deg = deg
+
+        if self.lock_deg:
+            new_text = str(self.lock_deg)
+        else:
+            new_text = ""
+
+        self.window.lock_input.setText(new_text)
+
+    @updates_setting
+    def update_polarization(self, pol, state):
+        if state == 0:
+            self.polarization.remove(pol)
+        elif state == 2:
+            self.polarization.add(pol)
+
+    @updates_setting
+    def set_freq(self, freq):
+        self.freq = freq
+
+    @updates_setting
+    def set_lock_var(self, var):
+        self.lock_var = var
+
+    @updates_setting
     def set_file(self):
         filename = QFileDialog.getOpenFileName(self.window)[0]
 
-        if filename:
-            self.filename = filename
-            self.window.setWindowTitle(self.filename)
+        if not filename:
+            return
 
-    def load(self, freq=None):
-        pass
-
-    def update_plot_settings(self, settings):
-        for key, val in settings.items():
-
-            if key == "locked_degree":
-
-                # The input value is parsed to int if parsing fails
-                # the last value is kept and the input field is reset
-
-                deg = None
-
-                try:
-                    deg = int(float(val))
-                except ValueError:
-                    pass
-
-                if deg:
-                    self.plot_settings[key] = deg
-                self.window.lock_input.setText(str(self.plot_settings[key]))
-                continue
-
-            # for all other keys
-            if key == "var":
-                other = "theta" if val == "phi" else "phi"
-                puffer = " " * (5 - len(val))
-                self.window.lock_label.setText(f"Lock {other} at:{puffer}")
-
-            self.plot_settings[key] = val
+        self.xl = pd.ExcelFile(filename)
+        self.window.freq_selector.clear()
+        self.window.freq_selector.addItems(self.xl.sheet_names)
+        self.filename = filename
+        self.window.setWindowTitle(self.filename)
