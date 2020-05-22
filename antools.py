@@ -99,7 +99,6 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
 
     for pol in polarization:
         pol_specific_values = [np.absolute(re + im*1j) for re, im in zip(df[f'{pol} Re'], df[f'{pol} Im'])]
-        print(type(pol_specific_values))
         abs_values.append(pol_specific_values)
 
     abs_values.append(df[plot_var].to_numpy())
