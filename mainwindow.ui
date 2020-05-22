@@ -49,14 +49,14 @@
        <item>
         <layout class="QGridLayout" name="gridLayout">
          <item row="0" column="0">
-          <widget class="QLabel" name="label">
+          <widget class="QLabel" name="label_freq">
            <property name="text">
             <string>Frequency:</string>
            </property>
           </widget>
          </item>
          <item row="1" column="0" colspan="2">
-          <widget class="QLabel" name="label_2">
+          <widget class="QLabel" name="label_var">
            <property name="text">
             <string>Plot variable:</string>
            </property>
@@ -84,7 +84,7 @@
           </layout>
          </item>
          <item row="2" column="0" colspan="2">
-          <widget class="QLabel" name="lock_label">
+          <widget class="QLabel" name="label_lock">
            <property name="text">
             <string>Lock theta at:</string>
            </property>
@@ -101,7 +101,7 @@
           </widget>
          </item>
          <item row="3" column="0" colspan="2">
-          <widget class="QLabel" name="label_3">
+          <widget class="QLabel" name="label_pol">
            <property name="text">
             <string>Polarization:</string>
            </property>

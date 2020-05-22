@@ -1,5 +1,6 @@
 from PyQt5 import uic
 from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtCore import QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
@@ -52,7 +53,11 @@ class MainWindow:
             self.window.set_e_theta,
             self.window.plot_btn,
             self.window.lock_input,
-            self.window.freq_selector
+            self.window.freq_selector,
+            self.window.label_lock,
+            self.window.label_var,
+            self.window.label_freq,
+            self.window.label_pol,
         ]
 
         self.register_signals()
@@ -95,6 +100,7 @@ class MainWindow:
         """
 
         self.lock_var = "Theta"
+        self.file_did_finish_loading = False
         self.lock_deg = None
         self.polarization = set()
         self.freq = None
@@ -110,7 +116,7 @@ class MainWindow:
         if no file is chosen only the open file button is active
         the plot button is active as long as all plot setting have a valid value
         """
-        if not self.filename:
+        if not self.file_did_finish_loading:
             for widget in self.requires_file:
                 widget.setEnabled(False)
             return
@@ -175,9 +181,25 @@ class MainWindow:
         if not filename:
             return
 
-        self.xl = pd.ExcelFile(filename)
         self.filename = filename
 
-        self.window.setWindowTitle(self.filename)
+        # self.xl = pd.ExcelFile(filename)
+        # self.window.freq_selector.clear()
+        # self.window.freq_selector.addItems(self.xl.sheet_names)
+        # self.window.setWindowTitle(self.filename)
+
+        # this way the file dialog is closed before the file is loaded
+        # so its obvious the application is not just hung up but the file is loading
+        self.window.setWindowTitle("Loading file...")
+        QTimer.singleShot(20, self.load_file)
+
+        self.file_did_finish_loading = False
+
+    @updates_setting
+    def load_file(self):
+
+        self.xl = pd.ExcelFile(self.filename)
         self.window.freq_selector.clear()
         self.window.freq_selector.addItems(self.xl.sheet_names)
+        self.window.setWindowTitle(self.filename)
+        self.file_did_finish_loading = True
