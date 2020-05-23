@@ -1,5 +1,5 @@
 from PyQt5 import uic
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtCore import QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
@@ -22,8 +22,6 @@ def updates_setting(f):
 
 class MainWindow:
     def __init__(self):
-        import os
-        print(os.getcwd())
         window = uic.loadUi("mainwindow.ui")
         self.window = window
         self.setup_gui()
@@ -142,7 +140,21 @@ class MainWindow:
         Call the antools api to plot the user specified graph into the canvas
         """
         df = self.xl.parse(self.freq)
-        Plotter.io_plot(df, lock=(self.lock_var, self.lock_deg), polarization=list(self.polarization), freq=self.freq, ax=self.ax)
+        try:
+            Plotter.io_plot(
+                df,
+                lock=(self.lock_var, self.lock_deg),
+                polarization=list(self.polarization),
+                freq=self.freq,
+                ax=self.ax
+            )
+        except TypeError or IndexError:
+            mb = QMessageBox(
+                # title="Format Error",
+                text="The file you specified seems to be in the wrong format"
+            )
+            mb.exec()
+
         self.ax.figure.canvas.draw_idle()
 
     @updates_setting
@@ -176,7 +188,7 @@ class MainWindow:
 
     @updates_setting
     def set_file(self):
-        filename = QFileDialog.getOpenFileName(self.window)[0]
+        filename = QFileDialog.getOpenFileName(self.window, filter="*.xlsx")[0]
 
         if not filename:
             return
@@ -191,9 +203,8 @@ class MainWindow:
         # this way the file dialog is closed before the file is loaded
         # so its obvious the application is not just hung up but the file is loading
         self.window.setWindowTitle("Loading file...")
-        QTimer.singleShot(20, self.load_file)
-
         self.file_did_finish_loading = False
+        QTimer.singleShot(20, self.load_file)
 
     @updates_setting
     def load_file(self):
