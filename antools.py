@@ -5,55 +5,8 @@ from math import log10
 from math import pi
 
 
-def convert_dB(val):
-
-    """
-    Convert val do dezibel
-    -------
-    float
-        20 * log10(val)
-    """
+def convert_to_dB(val):
     return 20 * log10(val)
-
-
-def lock_phi(df, deg):
-
-    """
-    Get the subslice of a DataFrame for a specific phi
-
-    Parameters
-    ----------
-    deg : int
-        The degree at which phi is to be locked
-    df : DataFrame
-        The simulation data of the Antenna
-    Returns
-    -------
-    DataFrame
-        Sorted rows where phi == deg
-    """
-
-    return df.iloc[range(deg, 65341 + deg, 361)]
-
-
-def lock_theta(df, deg):
-
-    """
-    Get the subslice of a DataFrame for a specific theta
-
-    Parameters
-    ----------
-    deg : int
-        The degree at which theta is to be locked
-    df : DataFrame
-        The simulation data of the Antenna
-    Returns
-    -------
-    DataFrame
-        Sorted rows where theta == deg
-    """
-
-    return df[deg*360 + deg: (deg + 1) * 360 + deg + 1]
 
 
 def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
@@ -82,18 +35,21 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
         The Values for both polarizations in the order specified by polarization
     """
 
-    if isinstance(io, pd.DataFrame):
-        dff = io
-    else:
-        dff = pd.read_excel(io, sheet_name=freq)
+    # if isinstance(io, pd.DataFrame):
+    #     dff = io
+    # else:
+    #     dff = pd.read_excel(io, sheet_name=freq)
+
+    df = io if isinstance(io, pd.DataFrame) else pd.read_excel(io, sheet_name=freq)
 
     lock_var, deg = lock
-    lock_function, plot_var = {
-        'Phi': (lock_phi, 'Theta'),
-        'Theta': (lock_theta, 'Phi')
-    }[lock_var]
 
-    df = lock_function(dff, deg)
+    if lock_var not in {'Theta', 'Phi'}:
+        raise ValueError(f"Invalid lock variable '{lock_var}' valid values are 'Phi' and 'Theta'")
+
+    plot_var = 'Thata' if lock_var == 'Phi' else 'Phi'
+
+    df = df.loc[df[lock_var] == deg]
 
     abs_values = []
 
@@ -204,7 +160,7 @@ class Plotter:
         """
 
         if not ax:
-            ax = ax = plt.subplot(111, projection='polar')
+            ax = plt.subplot(111, projection='polar')
         else:
             ax.clear()
 
@@ -212,7 +168,7 @@ class Plotter:
             var, deg = d
             rad = [d * pi / 180 for d in deg]
             if db:
-                var = list(map(convert_dB, var))
+                var = list(map(convert_to_dB, var))
             if label:
                 ax.plot(rad, var, label=l)
             else:

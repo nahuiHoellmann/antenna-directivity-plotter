@@ -43,28 +43,12 @@ class MainWindow:
         # The matplotlib Axes to draw to i.e. ax.plot()
         self.ax = canvas.figure.subplots(subplot_kw=dict(polar=True))
 
-        # This widgets will be deactivated if no file is specified
-        self.requires_file = [
-            self.window.plot_phi_btn,
-            self.window.plot_theta_btn,
-            self.window.set_e_phi,
-            self.window.set_e_theta,
-            self.window.plot_btn,
-            self.window.lock_input,
-            self.window.freq_selector,
-            self.window.label_lock,
-            self.window.label_var,
-            self.window.label_freq,
-            self.window.label_pol,
-        ]
-
         self.register_signals()
 
     def register_signals(self):
 
         self.window.choose_file_btn.clicked.connect(
-            # Don't change!
-            # self.set_file
+            # Don't change to self.set_file!
             lambda _: self.set_file()
         )
 
@@ -104,7 +88,8 @@ class MainWindow:
         self.freq = None
         self.filename = None
 
-        self.update_gui()
+        # The user needs to specify a file first
+        self.window.plot_controls.setEnabled(False)
 
     def update_gui(self):
         """
@@ -114,23 +99,21 @@ class MainWindow:
         if no file is chosen only the open file button is active
         the plot button is active as long as all plot setting have a valid value
         """
-        if not self.file_did_finish_loading:
-            for widget in self.requires_file:
-                widget.setEnabled(False)
-            return
+        if self.file_did_finish_loading:
+            self.window.plot_controls.setEnabled(True)
+
+            plot_prequesites = all([
+                self.lock_var,
+                self.lock_deg is not None,  # 0 is falsy value but a valid degree
+                self.polarization,
+                self.freq,
+                len(self.polarization) > 0
+            ])
+
+            self.window.plot_btn.setEnabled(plot_prequesites)
+
         else:
-            for widget in self.requires_file:
-                widget.setEnabled(True)
-
-        plot_prequesites = all([
-            self.lock_var,
-            self.lock_deg is not None,
-            self.polarization,
-            self.freq,
-            len(self.polarization) > 0
-        ])
-
-        self.window.plot_btn.setEnabled(plot_prequesites)
+            self.window.plot_controls.setEnabled(False)
 
     def show(self):
         self.window.show()
@@ -140,6 +123,7 @@ class MainWindow:
         Call the antools api to plot the user specified graph into the canvas
         """
         df = self.xl.parse(self.freq)
+
         try:
             Plotter.io_plot(
                 df,
@@ -150,25 +134,33 @@ class MainWindow:
             )
         except TypeError or IndexError:
             mb = QMessageBox(
-                # title="Format Error",
                 text="The file you specified seems to be in the wrong format"
             )
             mb.exec()
-
-        self.ax.figure.canvas.draw_idle()
+        else:
+            self.ax.figure.canvas.draw_idle()
 
     @updates_setting
     def parse_degree_input(self):
+
         try:
-            self.lock_deg = int(self.window.lock_input.text())
+            deg = int(self.window.lock_input.text())
         except ValueError:
             pass
-
-        if self.lock_deg is not None:
-            new_text = str(self.lock_deg)
         else:
-            new_text = ""
+            if self.lock_var == "Theta":
+                deg_max = 180
+            else:
+                deg_max = 360
 
+            if 0 > deg:
+                self.lock_deg = 0
+            elif deg > deg_max:
+                self.lock_deg = deg_max
+            else:
+                self.lock_deg = deg
+
+        new_text = str(self.lock_deg) if self.lock_deg is not None else ""
         self.window.lock_input.setText(new_text)
 
     @updates_setting
@@ -190,21 +182,12 @@ class MainWindow:
     def set_file(self):
         filename = QFileDialog.getOpenFileName(self.window, filter="*.xlsx")[0]
 
-        if not filename:
-            return
+        if filename:
 
-        self.filename = filename
-
-        # self.xl = pd.ExcelFile(filename)
-        # self.window.freq_selector.clear()
-        # self.window.freq_selector.addItems(self.xl.sheet_names)
-        # self.window.setWindowTitle(self.filename)
-
-        # this way the file dialog is closed before the file is loaded
-        # so its obvious the application is not just hung up but the file is loading
-        self.window.setWindowTitle("Loading file...")
-        self.file_did_finish_loading = False
-        QTimer.singleShot(20, self.load_file)
+            self.filename = filename
+            self.window.setWindowTitle("Loading file...")
+            self.file_did_finish_loading = False
+            QTimer.singleShot(20, self.load_file)
 
     @updates_setting
     def load_file(self):
