@@ -35,11 +35,6 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
         The Values for both polarizations in the order specified by polarization
     """
 
-    # if isinstance(io, pd.DataFrame):
-    #     dff = io
-    # else:
-    #     dff = pd.read_excel(io, sheet_name=freq)
-
     df = io if isinstance(io, pd.DataFrame) else pd.read_excel(io, sheet_name=freq)
 
     lock_var, deg = lock
