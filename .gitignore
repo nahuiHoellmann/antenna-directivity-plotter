@@ -130,4 +130,4 @@ main.pyproject.user
 mainwindow.ui.autosave
 .DS_Store
 setup.cfg
-
+settings.json
