@@ -93,7 +93,7 @@ class Plotter:
         lock_var, lock_deg = lock
         plot_var = 'Phi' if lock_var == 'Theta' else 'Theta'
 
-        title = f'Farfield Directiviity Abs({plot_var}) / dB'
+        title = f'Farfield Directivity Abs({plot_var}) / dB'
 
         if not freq:
             freq = '?'
