@@ -1,5 +1,5 @@
 # antenna-directivity-plotter
-A simple GUI to plot the directivity of an antenna.  
+A simple GUI to plot the directivity of an antenna
 This package is divided in two parts:
 
  1. antools.py which handles the logic in plotting and extracting data point from an excel
@@ -20,5 +20,10 @@ Running the app without QtCreator:
    
 
     python main.py
+
+Runnig the app in debug mode loads a mock DataFrame as 
+data in order to preview app without waiting for a file to load
+
+    python main.py -d
 
 Optionaly you can open the app using QtCreator
