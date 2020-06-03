@@ -93,7 +93,7 @@ class Plotter:
         lock_var, lock_deg = lock
         plot_var = 'Phi' if lock_var == 'Theta' else 'Theta'
 
-        title = f'{plot_var}(deg)'
+        title = f'Farfield Directiviity Abs({plot_var}) / dB'
 
         if not freq:
             freq = '?'
@@ -129,7 +129,7 @@ class Plotter:
             )
 
     @staticmethod
-    def plot(data, title=None, label=["", ""], db=True, ax=None):
+    def plot(data, title=None, label=None, db=True, ax=None):
 
         """
         A wraper around matplotlib.pyplot to reduce overhead when plotting polar graphs of antenna directivity
@@ -171,7 +171,7 @@ class Plotter:
 
         ax.set_rlabel_position(22.5)  # get radial labels away from plotted line
         ax.grid(True)
-        ax.legend(loc='lower left', bbox_to_anchor=(-0.2, -0.15, 1, 1), ncol=2)
+        ax.legend(loc='lower left', bbox_to_anchor=(-0.15, -0.235, 1, 1), ncol=1)
 
         if title:
-            ax.set_title(title)
+            ax.set_title(title, rotation='vertical', x=-0.2, y=0.15)

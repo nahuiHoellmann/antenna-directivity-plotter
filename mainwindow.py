@@ -7,6 +7,10 @@ from matplotlib.figure import Figure
 from antools import Plotter
 import pandas as pd
 from functools import wraps
+import numpy as np
+
+from unittest.mock import Mock
+
 
 def updates_setting(f):
     """
@@ -20,11 +24,14 @@ def updates_setting(f):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, debug=False):
         QMainWindow.__init__(self)
         uic.loadUi("mainwindow.ui", self)
         self.setup_gui()
         self.init_settings()
+
+        if debug:
+            self.fastTestSetUp()
 
     def setup_gui(self):
         """
@@ -35,12 +42,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("[ No open file ]")
 
         # Add the matplotlib canvas to the window
-        canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        self.horizontalLayout.replaceWidget(self.placeholder, canvas)
+        self.canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        self.horizontalLayout.replaceWidget(self.placeholder, self.canvas)
 
         # The matplotlib Axes to draw to i.e. ax.plot()
-        self.ax = canvas.figure.subplots(subplot_kw=dict(polar=True))
-
+        self.ax = self.canvas.figure.add_axes([0.05, 0.2, 0.9, 0.7], projection=None, polar=True)
         self.register_signals()
 
     def register_signals(self):
@@ -51,7 +57,7 @@ class MainWindow(QMainWindow):
         )
 
         self.plot_btn.clicked.connect(
-            self.plot
+            lambda _: self.plot()
         )
 
         self.lock_input.textEdited.connect(
@@ -74,6 +80,10 @@ class MainWindow(QMainWindow):
             lambda state: self.update_polarization('E-Theta', state)
         )
 
+        self.save_btn.clicked.connect(
+            self.save_plot
+        )
+
     def init_settings(self):
         """
         Set the default settings and update gui accordingly
@@ -85,11 +95,14 @@ class MainWindow(QMainWindow):
         self.polarization = set()
         self.freq = None
         self.filename = None
+        self.plot_visible = False
 
         self.valid_input = False
 
         # The user needs to specify a file first
         self.plot_controls.setEnabled(False)
+        # The user needs to draw a plot first
+        self.save_btn.setEnabled(False)
 
     def update_gui(self):
         """
@@ -115,6 +128,7 @@ class MainWindow(QMainWindow):
         else:
             self.plot_controls.setEnabled(False)
 
+    @updates_setting
     def plot(self):
         """
         Call the antools api to plot the user specified graph into the canvas
@@ -137,11 +151,16 @@ class MainWindow(QMainWindow):
         else:
             self.ax.figure.canvas.draw_idle()
 
+            if not self.plot_visible:
+                self.plot_visible = True
+                self.save_btn.setEnabled(True)
+                self.save_btn.repaint()  # For some reason the button stays grayed out if not repainted manualy
+
     @updates_setting
     def validate_input(self, text):
-    
+
         deg = None
-    
+
         if text:
             try:
                 deg = int(text)
@@ -153,25 +172,23 @@ class MainWindow(QMainWindow):
                 else:
                     deg_max = 360
 
-                if 0 < deg < deg_max:
-                    self.lock_deg = 0
+                if 0 <= deg <= deg_max:
+                    self.lock_deg = deg
                 else:
                     self.lock_deg = None
         else:
             self.lock_deg = None
 
-        inputIsValid = (text == "" or deg is not None)
+        inputIsValid = (text == "" or self.lock_deg is not None)
 
         if inputIsValid and not self.valid_input:
             self.valid_input = True
             self.lock_input.setStyleSheet("")
         elif not inputIsValid and self.valid_input:
             self.valid_input = False
-            self.lock_input.setStyleSheet(f"QLineEdit {'{'} background: rgb(255,178,174); selection-background-color: rgb(233, 99, 0); {'}'}")
-
-        
-
-        
+            self.lock_input.setStyleSheet(
+                f"QLineEdit {'{'} background: rgb(255,178,174); selection-background-color: rgb(233, 99, 0); {'}'}"
+            )
 
     @updates_setting
     def update_polarization(self, pol_name, state):
@@ -187,7 +204,9 @@ class MainWindow(QMainWindow):
     @updates_setting
     def set_lock_var(self, var):
         self.lock_var = var
-        self.label_lock.setText(f'Lock {var} at:')
+        self.label_lock.setText(f'{var} =')
+
+        self.validate_input.__wrapped__(self, self.lock_input.text())
 
     @updates_setting
     def set_file(self):
@@ -208,3 +227,24 @@ class MainWindow(QMainWindow):
         self.freq_selector.addItems(self.xl.sheet_names)
         self.setWindowTitle(self.filename)
         self.file_did_finish_loading = True
+
+    def save_plot(self):
+        filename = QFileDialog.getSaveFileName(self, filter="*.png *.svg *.pdf")[0]
+        if filename:
+            self.canvas.figure.savefig(filename)
+
+    def fastTestSetUp(self):
+        data = np.load("debug/fastdf.npy")
+        df = pd.DataFrame(data=data, columns=['Theta', 'Phi', 'E-Theta Re', 'E-Theta Im', 'E-Phi Re', 'E-Phi Im'])
+        self.xl = Mock()
+        self.xl.parse = Mock(return_value=df)
+        self.setWindowTitle("DEBUG MODE")
+        self.lock_deg = 45
+        self.polarization = set(["E-Theta", "E-Phi"])
+        self.lock_input.setText("45")
+        self.freq = "10000 MHz"
+        self.file_did_finish_loading = True
+        self.freq_selector.addItems(["10000 MHz"])
+        self.set_e_phi.setCheckState(2)
+        self.set_e_theta.setCheckState(2)
+        self.update_gui()
