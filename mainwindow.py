@@ -177,6 +177,7 @@ class MainWindow:
     @updates_setting
     def set_lock_var(self, var):
         self.lock_var = var
+        self.window.label_lock.setText(f'Lock {var} at:')
 
     @updates_setting
     def set_file(self):
