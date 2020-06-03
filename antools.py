@@ -42,7 +42,7 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
     if lock_var not in {'Theta', 'Phi'}:
         raise ValueError(f"Invalid lock variable '{lock_var}' valid values are 'Phi' and 'Theta'")
 
-    plot_var = 'Thata' if lock_var == 'Phi' else 'Phi'
+    plot_var = 'Theta' if lock_var == 'Phi' else 'Phi'
 
     df = df.loc[df[lock_var] == deg]
 

@@ -88,7 +88,7 @@
             <item row="1" column="0" colspan="2">
              <widget class="QLabel" name="label_var">
               <property name="text">
-               <string>Plot variable:</string>
+               <string>Variable to Plot:</string>
               </property>
              </widget>
             </item>
@@ -115,8 +115,14 @@
             </item>
             <item row="2" column="0" colspan="2">
              <widget class="QLabel" name="label_lock">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
-               <string>Lock theta at:</string>
+               <string>Lock Theta at:</string>
               </property>
              </widget>
             </item>
