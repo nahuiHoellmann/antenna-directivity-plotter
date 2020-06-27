@@ -3,10 +3,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import log10
 from math import pi
+from functools import partial
 
 
 def convert_to_dB(val):
     return 20 * log10(val)
+
+
+def constrain(val, constr_min=None, constr_max=None):
+    if constr_min and val <= constr_min:
+        return constr_min
+    if constr_max and val >= constr_max:
+        return constr_max
+    return val
 
 
 def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
@@ -60,7 +69,7 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
 class Plotter:
 
     @staticmethod
-    def io_plot(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None, db=True, ax=None):
+    def io_plot(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None, db=True, ax=None, constr_min=None, constr_max=None):  # noqa: E501
 
         """
         Plot antenna data which is extracted of an excel or DataFrame first
@@ -111,7 +120,9 @@ class Plotter:
                        lable(polarization[0])
                       ],
                 db=db,
-                ax=ax
+                ax=ax,
+                constr_min=constr_min,
+                constr_max=constr_max
             )
 
         else:
@@ -125,11 +136,13 @@ class Plotter:
                        lable(polarization[1])
                       ],
                 db=db,
-                ax=ax
+                ax=ax,
+                constr_min=constr_min,
+                constr_max=constr_max
             )
 
     @staticmethod
-    def plot(data, title=None, label=None, db=True, ax=None):
+    def plot(data, title=None, label=None, db=True, ax=None, constr_min=None, constr_max=None):
 
         """
         A wraper around matplotlib.pyplot to reduce overhead when plotting polar graphs of antenna directivity
@@ -164,6 +177,11 @@ class Plotter:
             rad = [d * pi / 180 for d in deg]
             if db:
                 var = list(map(convert_to_dB, var))
+
+            if constr_min or constr_max:
+                specific_constrain = partial(constrain, constr_min=constr_min, constr_max=constr_max)
+                var = list(map(specific_constrain, var))
+
             if label:
                 ax.plot(rad, var, label=l)
             else:
