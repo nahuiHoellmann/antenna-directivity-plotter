@@ -190,7 +190,7 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
-             <widget class="QLineEdit" name="minConstraint">
+             <widget class="QLineEdit" name="min_constraint_input">
               <property name="maximumSize">
                <size>
                 <width>80</width>
@@ -203,7 +203,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="maxConstraint">
+             <widget class="QLineEdit" name="max_constraint_input">
               <property name="maximumSize">
                <size>
                 <width>80</width>

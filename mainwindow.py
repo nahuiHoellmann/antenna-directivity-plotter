@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         )
 
         self.lock_input.textEdited.connect(
-            self.validate_input
+            self.validate_constraint_input
         )
 
         self.freq_selector.currentTextChanged.connect(
@@ -84,6 +84,14 @@ class MainWindow(QMainWindow):
             self.save_plot
         )
 
+        self.min_constraint_input.textEdited.connect(
+            lambda text: self.validate_constraint_input(text, constr='min')
+        )
+
+        self.max_constraint_input.textEdited.connect(
+            lambda text: self.validate_constraint_input(text, constr='max')
+        )
+
     def init_settings(self):
         """
         Set the default settings and update gui accordingly
@@ -96,8 +104,16 @@ class MainWindow(QMainWindow):
         self.freq = None
         self.filename = None
         self.plot_visible = False
+        self.constraint = {
+            'min': None,
+            'max': None
+        }
 
-        self.valid_input = False
+        self.valid_degree_input = False
+        self.valid_constraint_input = {
+            'min': False,
+            'max': False
+        }
 
         # The user needs to specify a file first
         self.plot_controls.setEnabled(False)
@@ -141,7 +157,9 @@ class MainWindow(QMainWindow):
                 lock=(self.lock_var, self.lock_deg),
                 polarization=list(self.polarization),
                 freq=self.freq,
-                ax=self.ax
+                ax=self.ax,
+                constr_min=self.constraint['min'],
+                constr_max=self.constraint['max']
             )
         except TypeError or IndexError:
             mb = QMessageBox(
@@ -157,7 +175,7 @@ class MainWindow(QMainWindow):
                 self.save_btn.repaint()  # For some reason the button stays grayed out if not repainted manualy
 
     @updates_setting
-    def validate_input(self, text):
+    def validate_degree_input(self, text):
 
         deg = None
 
@@ -181,12 +199,44 @@ class MainWindow(QMainWindow):
 
         inputIsValid = (text == "" or self.lock_deg is not None)
 
-        if inputIsValid and not self.valid_input:
-            self.valid_input = True
+        if inputIsValid and not self.valid_degree_input:
+            self.valid_degree_input = True
             self.lock_input.setStyleSheet("")
-        elif not inputIsValid and self.valid_input:
-            self.valid_input = False
+        elif not inputIsValid and self.valid_degree_input:
+            self.valid_degree_input = False
             self.lock_input.setStyleSheet(
+                f"QLineEdit {'{'} background: rgb(255,178,174); selection-background-color: rgb(233, 99, 0); {'}'}"
+            )
+
+    def validate_constraint_input(self, text, constr=''):
+
+        if constr == 'min':
+            widget = self.min_constraint_input
+        elif constr == 'max':
+            widget = self.max_constraint_input
+        else:
+            raise ValueError
+
+        num = None
+
+        if text:
+
+            try:
+                num = float(text)
+            except ValueError:
+                self.constraint[constr] = None
+            else:
+                self.constraint[constr] = num
+        else:
+            self.constraint[constr] = None
+            num = True
+
+        if num and not self.valid_constraint_input[constr]:
+            self.valid_constraint_input[constr] = True
+            widget.setStyleSheet("")
+        elif not num and self.valid_constraint_input[constr]:
+            self.valid_constraint_input[constr] = False
+            widget.setStyleSheet(
                 f"QLineEdit {'{'} background: rgb(255,178,174); selection-background-color: rgb(233, 99, 0); {'}'}"
             )
 
@@ -206,7 +256,7 @@ class MainWindow(QMainWindow):
         self.lock_var = var
         self.label_lock.setText(f'{var} =')
 
-        self.validate_input.__wrapped__(self, self.lock_input.text())
+        self.validate_degree_input.__wrapped__(self, self.lock_input.text())
 
     @updates_setting
     def set_file(self):
