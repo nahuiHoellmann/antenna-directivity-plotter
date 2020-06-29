@@ -93,6 +93,10 @@ class Plotter:
         ax: matplotlib.axes.Axes, optional
             The ax to draw to, if one is specified the caller is responsible to call ax.show() or the equivalent after
             the funtion call is complete
+        constr_min: number, optional
+            The smallest result to plot, smaller numbers are substituded by this value
+        constr_max:
+            The biggest result to plot, bigger numbers are substituded by this value
         Returns
         -------
         matplotlib.axes.Axes
@@ -161,6 +165,10 @@ class Plotter:
         ax: matplotlib.axes.Axes, optional
             The ax to draw to, if one is specified the caller is responsible
             to make the canvas redraw after the function call ended
+        constr_min: number, optional
+            The smallest result to plot, smaller numbers are substituded by this value
+        constr_max:
+            The biggest result to plot, bigger numbers are substituded by this value
         Returns
         -------
         matplotlib.axes.Axes
