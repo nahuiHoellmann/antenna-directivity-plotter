@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         )
 
         self.lock_input.textEdited.connect(
-            self.validate_constraint_input
+            self.validate_degree_input
         )
 
         self.freq_selector.currentTextChanged.connect(
