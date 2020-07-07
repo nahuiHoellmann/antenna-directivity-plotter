@@ -5,6 +5,34 @@ from math import log10
 from math import pi
 from functools import partial
 
+import warnings
+
+
+def read_excel(*args, **kwargs):
+
+    """
+    This is a wrapper function around pandas.read_excel which properly converts integer values
+    which are incorrectly read as floating point values and incorrectly rounded down which
+    leads to some indexes missing
+    """
+
+    def converter(value):
+
+        if type(value) is float:
+            value = round(value)
+
+        return np.int64(value)
+
+    if 'converters' in kwargs:
+        warnings.warn('antools.read_excel provides its own converters using your own might cause some errors')
+    else:
+        kwargs['converters'] = {
+            'Phi': converter,
+            'Theta': converter
+        }
+
+    return pd.read_excel(*args, **kwargs)
+
 
 def convert_to_dB(val):
     return 20 * log10(val)
@@ -44,7 +72,7 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
         The Values for both polarizations in the order specified by polarization
     """
 
-    df = io if isinstance(io, pd.DataFrame) else pd.read_excel(io, sheet_name=freq)
+    df = io if isinstance(io, pd.DataFrame) else read_excel(io, sheet_name=freq)
 
     lock_var, deg = lock
 

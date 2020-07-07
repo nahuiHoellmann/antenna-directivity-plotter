@@ -4,12 +4,10 @@ from PyQt5.QtCore import QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-from antools import Plotter
+import antools
 import pandas as pd
 from functools import wraps
 import numpy as np
-
-from unittest.mock import Mock
 
 
 def updates_setting(f):
@@ -149,10 +147,10 @@ class MainWindow(QMainWindow):
         """
         Call the antools api to plot the user specified graph into the canvas
         """
-        df = self.xl.parse(self.freq)
+        df = self.xl[self.freq]
 
         try:
-            Plotter.io_plot(
+            antools.Plotter.io_plot(
                 df,
                 lock=(self.lock_var, self.lock_deg),
                 polarization=list(self.polarization),
@@ -272,9 +270,9 @@ class MainWindow(QMainWindow):
     @updates_setting
     def load_file(self):
 
-        self.xl = pd.ExcelFile(self.filename)
+        self.xl = antools.read_excel(self.filename, sheet_name=None)
         self.freq_selector.clear()
-        self.freq_selector.addItems(self.xl.sheet_names)
+        self.freq_selector.addItems(sheetname for sheetname in self.xl)
         self.setWindowTitle(self.filename)
         self.file_did_finish_loading = True
 
@@ -286,8 +284,10 @@ class MainWindow(QMainWindow):
     def fastTestSetUp(self):
         data = np.load("debug/fastdf.npy")
         df = pd.DataFrame(data=data, columns=['Theta', 'Phi', 'E-Theta Re', 'E-Theta Im', 'E-Phi Re', 'E-Phi Im'])
-        self.xl = Mock()
-        self.xl.parse = Mock(return_value=df)
+        # df = df.astype(EXCELDTYPE)
+        self.xl = {
+            '10000 MHz': df
+        }
         self.setWindowTitle("DEBUG MODE")
         self.lock_deg = 45
         self.polarization = set(["E-Theta", "E-Phi"])
