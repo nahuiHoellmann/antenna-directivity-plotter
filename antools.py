@@ -76,10 +76,20 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
 
     lock_var, deg = lock
 
+    if deg not in range(0, 180):
+        raise ValueError(f"The locked variable should be locked in a int value [0, 180)")
+
     if lock_var not in {'Theta', 'Phi'}:
         raise ValueError(f"Invalid lock variable '{lock_var}' valid values are 'Phi' and 'Theta'")
 
     plot_var = 'Theta' if lock_var == 'Phi' else 'Phi'
+
+    compl_df = None
+
+    if plot_var == 'Theta':
+
+        compl_deg = 360 - deg
+        compl_df = df.loc[df[lock_var] == compl_deg][179::-1]
 
     df = df.loc[df[lock_var] == deg]
 
@@ -87,9 +97,13 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
 
     for pol in polarization:
         pol_specific_values = [np.absolute(re + im*1j) for re, im in zip(df[f'{pol} Re'], df[f'{pol} Im'])]
+
+        if compl_df is not None:
+            pol_specific_values.extend([np.absolute(re + im*1j) for re, im in zip(compl_df[f'{pol} Re'], compl_df[f'{pol} Im'])])  # Noqa 
+
         abs_values.append(pol_specific_values)
 
-    abs_values.append(df[plot_var].to_numpy())
+    abs_values.append(np.array(range(0, 361)))
 
     return tuple(abs_values)
 
