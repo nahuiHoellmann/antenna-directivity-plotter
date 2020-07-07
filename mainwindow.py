@@ -182,10 +182,7 @@ class MainWindow(QMainWindow):
             except ValueError:
                 self.lock_deg = None
             else:
-                if self.lock_var == "Theta":
-                    deg_max = 180
-                else:
-                    deg_max = 360
+                deg_max = 180
 
                 if 0 <= deg <= deg_max:
                     self.lock_deg = deg

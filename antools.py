@@ -76,8 +76,8 @@ def data_points(io, *, lock, polarization=['E-Theta', 'E-Phi'], freq=None):
 
     lock_var, deg = lock
 
-    if deg not in range(0, 180):
-        raise ValueError(f"The locked variable should be locked in a int value [0, 180)")
+    if deg not in range(0, 181):
+        raise ValueError(f"The locked variable should be locked in a int value [0, 180]")
 
     if lock_var not in {'Theta', 'Phi'}:
         raise ValueError(f"Invalid lock variable '{lock_var}' valid values are 'Phi' and 'Theta'")
