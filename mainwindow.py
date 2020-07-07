@@ -7,7 +7,6 @@ from matplotlib.figure import Figure
 import antools
 import pandas as pd
 from functools import wraps
-import numpy as np
 
 
 def updates_setting(f):
@@ -282,9 +281,7 @@ class MainWindow(QMainWindow):
             self.canvas.figure.savefig(filename)
 
     def fastTestSetUp(self):
-        data = np.load("debug/fastdf.npy")
-        df = pd.DataFrame(data=data, columns=['Theta', 'Phi', 'E-Theta Re', 'E-Theta Im', 'E-Phi Re', 'E-Phi Im'])
-        # df = df.astype(EXCELDTYPE)
+        df = pd.read_pickle('debug/testdf.pickle')
         self.xl = {
             '10000 MHz': df
         }
