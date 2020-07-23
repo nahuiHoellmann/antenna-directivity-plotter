@@ -14,8 +14,8 @@ def updates_setting(f):
     Make sure that after the user changes the plot settings the gui is updated accordingly
     """
     @wraps(f)
-    def wrapper(self, *args):
-        f(self, *args)
+    def wrapper(self, *args, **kwargs):
+        f(self, *args, **kwargs)
         self.update_gui()
     return wrapper
 
@@ -106,10 +106,10 @@ class MainWindow(QMainWindow):
             'max': None
         }
 
-        self.valid_degree_input = False
+        self.valid_degree_input = True
         self.valid_constraint_input = {
-            'min': False,
-            'max': False
+            'min': True,
+            'max': True
         }
 
         # The user needs to specify a file first
@@ -133,7 +133,9 @@ class MainWindow(QMainWindow):
                 self.lock_deg is not None,  # 0 is falsy value but a valid degree
                 self.polarization,
                 self.freq,
-                len(self.polarization) > 0
+                len(self.polarization) > 0,
+                self.valid_constraint_input['min'],
+                self.valid_constraint_input['max']
             ])
 
             self.plot_btn.setEnabled(plot_prequesites)
@@ -202,6 +204,7 @@ class MainWindow(QMainWindow):
                 f"QLineEdit {'{'} background: rgb(255,178,174); selection-background-color: rgb(233, 99, 0); {'}'}"
             )
 
+    @updates_setting
     def validate_constraint_input(self, text, constr=''):
 
         if constr == 'min':
@@ -225,10 +228,10 @@ class MainWindow(QMainWindow):
             self.constraint[constr] = None
             num = True
 
-        if num and not self.valid_constraint_input[constr]:
+        if num is not None and not self.valid_constraint_input[constr]:
             self.valid_constraint_input[constr] = True
             widget.setStyleSheet("")
-        elif not num and self.valid_constraint_input[constr]:
+        elif num is None and self.valid_constraint_input[constr]:
             self.valid_constraint_input[constr] = False
             widget.setStyleSheet(
                 f"QLineEdit {'{'} background: rgb(255,178,174); selection-background-color: rgb(233, 99, 0); {'}'}"
